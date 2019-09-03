@@ -27,6 +27,9 @@ it is best to use coding "1"; if your sample has substantial (> 50%) ancestry fr
 ##### NOTE: The individual ID must match the ID used in the VCF header for that individual
 
 
+Currently all of our analyses are based on CADD1.3, so it is important to use that version when annotating indels manually. 
+
+
 ## WHEN USING THIS SCRIPT PLEASE CITE
 Wang K, Li M, Hakonarson H. ANNOVAR: Functional annotation of genetic variants from next-generation sequencing data. Nucleic Acids Research, 38:e164, 2010
 
