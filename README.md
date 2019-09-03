@@ -1,6 +1,11 @@
 # PSAP
 Pipeline code for calculating population sampling probabilities
 
+## CONTENTS
+THE PSAP PACKAGE CONTAINS BASH SCRIPTS, AND ALL DEPENDANT PYTHON AND R SCRIPTS AND LOOKUP TABLES. EACH SCRIPT IS DESCRIBED BELOW.
+
+1) ```individual_analysis_pipeline.sh```: Calls ANNOVAR to annotate data, calls a python script to appropriately annotate variants that overlap transcripts for multiple genes, calls an Rscript that performs some basic cleaning steps (mendelian inheritance filter - allows de novos, PSAP calibration filter, missing data filter, allele frequency discrepancy filter) and annotates all individuals with PSAP, and calls an R script that will report out candiate variants (inheritance pattern consistent with disease model)
+
 ## REQUIRED SOFTWARE
 This pipeline uses the R statistical software and ANNOVAR.  Please ensure R (http://r-project.org) and ANNOVAR (http://annovar.openbioinformatics.org) are installed.  Paths to all other accessory softwares/scripts are hard coded to the directories within the PSAP directory.
 
