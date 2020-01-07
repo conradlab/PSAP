@@ -27,7 +27,32 @@ it is best to use coding "1"; if your sample has substantial (> 50%) ancestry fr
 ##### NOTE: The individual ID must match the ID used in the VCF header for that individual
 
 
-Currently all of our analyses are based on CADD1.3, so it is important to use that version when annotating indels manually. 
+##### CONTENTS: 
+
+PSAP is intended to be used as a pipeline for generating single-sample reports from a batch VCF file, taking advantage of a 
+cluster environment for parallelization. The pipeline code on github consists of:
+1. an example shell script individual_psap_pipeline_new.sh, which could be modified as needed for local needs, or it could 
+simply serve as inspiration.  
+
+2. R Scripts that, together, implement PSAP for individual samples (PSAP_individual.R and apply_PSAP.R). In theory these
+scripts, and the PSAP lookup tables are all that are needed to run PSAP, assuming that the input data are complete and
+formatted properly).
+
+3. helper scripts and PSAP lookup tables. 
+
+
+##### USAGE: 
+
+The full PSAP pipeline provides a method by which to intergrate analysis of SNVs, indels, and CNVs in the same statistical 
+framework. In the current implmementation, we require SNVs and indels to be annotated with CADD1.3 phred scores. This means 
+that indels must be provided in a separate file from SNVs (in most cases this indel file will be obtained directly from the
+CADD web server: https://cadd.gs.washington.edu/score). 
+
+Currently all of our analyses are based on CADD1.3, so it is important to use that version when annotating indels manual 
+with the CADD webserver. The file format for CADD1.4 is different (as of fall of 2019) and will cause the PSAP pipeline to
+break.
+
+
 
 
 ## WHEN USING THIS SCRIPT PLEASE CITE
