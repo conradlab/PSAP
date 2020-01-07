@@ -15,7 +15,8 @@ CNVCALLS<-0 ## VARIABLE WILL BE SET TO 1 IF CNV CALLS ARE AVAILABLE FOR THIS sAM
 
 
 #ARGUMENTS FOR TESTING VIA EMACS
-#setwd("/scratch/dclab/wu_lin/Controls/GTEx")
+#setwd("/scratch/dclab/gurnett")
+#arg<-c("wuwu_test","1019001_b37d.variant684","/scratch/dclab/psap4/psap/","wuwu_mini.ped","hg19",0)
                                         #arg<-c("GTEx_test","GTEX-X4XY-0002-SM-58Q91","/scratch/dclab/wu_lin/psap_wulin/","/scratch/dclab/wu_lin/Controls/GTEx/GTEx_test.ped","hg19","-F")
 
 #setwd("/scratch/dclab/gemini/gemini_batch4/genotyping")

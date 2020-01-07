@@ -9,7 +9,7 @@ FORCE=0
 # forces to output p-values for all possible coding variants instead of the top ones for each gene
 
 echo $#
-HG_BUILD=$4
+
 echo $PWD
 module load R
 if [ $# -gt 0 ] && [ $1 == "-h" ]
@@ -18,9 +18,18 @@ then
 	echo "arg2 = output file name" 
 	echo "arg3 = family pedigree file"
 	echo "arg4 = human genome build version (eg. hg19, hg38)"
+	echo "arg5 = indels annotated with CADD"
+	echo "arg6 = CNV calls"
 	echo "Example: popScore_analysis_pipeline.sh INDV001.vcf INDV.OUTFILE INDV001.ped HG_BUILD"
 	exit
 fi
+
+        OUTFILE=$2 # Name of output file (no directory should be included here)
+        PED_FILE=$3 # Name of pedigree file (directory should be included here)
+	HG_BUILD=$4
+	INDEL_FILE=$5 # Name of indel file (directory should be included here)
+	CNV_FILE=$6 # Name of CNV file (directory should be included here)
+
 
 if [ $# -ge 4 ]
 then
@@ -52,9 +61,7 @@ then
         cd $FILE_LOC # Use location of  VCF file as working directory, this is where all output will be written
         echo $PWD
         VCF=${1##/*/} # Extract VCF file name
-        OUTFILE=$2 # Name of output file (no directory should be included here)
-        PED_FILE=$3 # Name of pedigree file (directory should be included here)
-
+	
 # Convert vcf file to annovar file
         echo "PROGRESS: Converting VCF file to annovar input"
         cut -f1-8 $VCF > tmp #make small file just of sites, annotate this instead of full VCF
@@ -98,7 +105,7 @@ echo "ml vcftools">> psap.sbatch
 echo "ml R" >> psap.sbatch
 echo "vcftools --indv \${SAMPLE} --vcf $VCF --recode --out \${SAMPLE} ">> psap.sbatch
 echo "perl ${ANNOVAR_PATH}convert2annovar.pl -format vcf4old \${SAMPLE}.recode.vcf -outfile \${SAMPLE}.avinput -includeinfo" >> psap.sbatch
-echo "Rscript ${PSAP_PATH}RScripts/PSAP_individual.R ${OUTFILE} \${SAMPLE} $PSAP_PATH $PED_FILE $HG_BUILD $FORCE" >> psap.sbatch
+echo "Rscript ${PSAP_PATH}RScripts/PSAP_individual.R ${OUTFILE} \${SAMPLE} $PSAP_PATH $PED_FILE $HG_BUILD $FORCE $INDEL_FILE" >> psap.sbatch
 echo "rm \${SAMPLE}.avinput \${SAMPLE}.recode.vcf" >> psap.sbatch
 
        

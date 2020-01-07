@@ -1,15 +1,18 @@
 #!/bin/Rscript
 
-#Rscript PSAP_individual.R ${OUTFILE}.avinput $i $PSAP_PATH $PED_FILE $HG_BUILD $Force
+#Rscript PSAP_individual.R ${OUTFILE}.avinput $i $PSAP_PATH $PED_FILE $HG_BUILD $Force INDEL_FILE CNV_DEL_FILE CNV_DUP_FILE
 print(getwd())
 ## NAME OF FILE FOR ANALYSIS, PROVIDED AS AN ARGUMENT WHEN CALLING THE RSCRIPT
-arg <- commandArgs(trailingOnly=T) ## arg[1] = family - must be annovar annotated (avinput.hg19_multianno.txt) and have a separate header file for the vcf colums(header); arg[2] = individual ID; arg[3] = path to psap directory; arg[4] = ped file; arg[5] = genome build version; arg[6] whether report all the variants instead output the worst in each gene
+arg <- commandArgs(trailingOnly=T) ## arg[1] = family - must be annovar annotated (avinput.hg19_multianno.txt) and have a separate header file for the vcf colums(header); arg[2] = individual ID; arg[3] = path to psap directory; arg[4] = ped file; arg[5] = genome build version; arg[6] whether report all the variants instead output the worst in each gene; arg[7] = optional input file of indel calls annotated by CADD online; arg[8] = optional input file of CNV-DEL calls; arg[9] = optional input file of CNV-DUP calls
 print(arg[1])
 print(arg[2])
 print(arg[3])
 print(arg[4])
 print(arg[5])
 print(arg[6])
+print(arg[7])
+print(arg[8])
+print(arg[9])
 
 CNVCALLS<-0 ## VARIABLE WILL BE SET TO 1 IF CNV CALLS ARE AVAILABLE FOR THIS sAMPLE
 
@@ -22,12 +25,21 @@ CNVCALLS<-0 ## VARIABLE WILL BE SET TO 1 IF CNV CALLS ARE AVAILABLE FOR THIS sAM
 #arg<-c("GEMINI4","washu_P22","/scratch/dclab/psap4/psap/","/scratch/dclab/liina/workfiles/GEMINI_190304_all_genotyped_samples_clean.ped","hg19","FALSE")
 
 
+
+arg<-c("GEMINI4","H_VZ-P16-P16","/Users/conradon/psap/PSAP/","/Users/conradon/gemini/analysis/dec/GEMINI_190304_all_genotyped_samples_clean.ped","hg19","FALSE","/Users/conradon/gemini/analysis/dec/GEMINI_190505_variants_FINAL_biallelicINDELs.hg19_cut_CADD_CHR.tsv","/Users/conradon/gemini/analysis/dec/Gemini4-sq60-DEL-NOA-no-exclusions-no-outliers-maf-1pc-h19-liftover-final.hg19_multianno_dup.txt","/Users/conradon/gemini/analysis/dec/Gemini4-NOA-sq60-DUP-LoF-no-exclusions-no-outliers-maf-1pc-hg19-liftover.hg19_multianno_dup.txt")
+
+
+
 fam.id <- strsplit(arg[1],".avinput",fixed=T)
 indv.id <- arg[2] # Individual ID - ASSUMES only one individual is being analyzed/annotated
 dir <- arg[3]
 ped <- read.table(arg[4],stringsAsFactors=F)
 build_ver <-arg[5]
 Force <- arg[6]
+indel.file <- arg[7]
+cnv.del.file <- arg[8]
+cnv.dup.file <- arg[9]
+
 #find ethnicity information
 if(ped$V7[which(ped$V2 == indv.id)] == 2) {
 	eth <- "_AFR"
@@ -56,13 +68,13 @@ XY_genelist <- scan(paste(dir,"lookups/Gender_genelist_041219_rm4.txt",sep=""),w
 
 
 
+cnv<-NULL
 
-
-
+if (is.na(cnv.del.file)==FALSE){
 ## ADDITIONAL EXPERIMENTAL INTEGRATION OF CNVS
 #SHOULD BE PROCESSED WITH PYTHON SPLIT GENE SCRIPT BEFOREHAND
-cnv<-read.table("/scratch/dclab/alex/batch4/hg19_multianno/annovar/Gemini4-sq60-DEL-NOA-no-exclusions-no-outliers-maf-1pc-h19-liftover-final.hg19_multianno_dup.txt",header=F,sep="\t",quote="",comment.char="",skip=1,stringsAsFactors=F)
-header<-read.table("/scratch/dclab/alex/batch4/hg19_multianno/annovar/Gemini4-sq60-DEL-NOA-no-exclusions-no-outliers-maf-1pc-h19-liftover-final.hg19_multianno_dup.txt",header=F,sep="\t",nrow=1,stringsAsFactors=F)
+cnv<-read.table(cnv.del.file,header=F,sep="\t",quote="",comment.char="",skip=1,stringsAsFactors=F)
+header<-read.table(cnv.del.file,header=F,sep="\t",nrow=1,stringsAsFactors=F)
 header[length(header)]<-"ID"
 header<-c(header,"TYPE","REGION","INFO","FILTER","QUAL","Alt_Read","Total_Read")
 
@@ -77,24 +89,29 @@ cnv<-cnv[,-which(colnames(cnv)=="REGION")]
 
 colnames(cnv)[dim(cnv)[2]]<-indv.id
 cnv$ExonicFunc.wgEncodeGencodeBasicV19<-"frameshift deletion"
+}
 
+if (is.na(cnv.dup.file)==FALSE){
 ### NOW DUPlICATIONS
-dup<-read.table("/scratch/dclab/alex/batch4/hg19_multianno/annovar/Gemini4-NOA-sq60-DUP-LoF-no-exclusions-no-outliers-maf-1pc-hg19-liftover.hg19_multianno_dup.txt",header=F,sep="\t",quote="",comment.char="",skip=1,stringsAsFactors=F)
-dup.header<-read.table("/scratch/dclab/alex/batch4/hg19_multianno/annovar/Gemini4-NOA-sq60-DUP-LoF-no-exclusions-no-outliers-maf-1pc-hg19-liftover.hg19_multianno_dup.txt",header=F,sep="\t",nrow=1,stringsAsFactors=F)
+dup<-read.table(cnv.dup.file,header=F,sep="\t",quote="",comment.char="",skip=1,stringsAsFactors=F)
+dup.header<-read.table(cnv.dup.file,header=F,sep="\t",nrow=1,stringsAsFactors=F)
 dup.header[length(dup.header)]<-"ID"
 dup.header<-c(dup.header,"TYPE","INFO","FILTER","QUAL","Alt_Read","Total_Read")
 
 colnames(dup)<-dup.header
 #stopifnot(colnames(dup)==colnames(cnv))
 
-
-
 dup$ExonicFunc.wgEncodeGencodeBasicV19<-"frameshift insertion"
 dup$gt<-"het"
 colnames(dup)[dim(dup)[2]]<-indv.id
 
-cnv<-rbind(cnv,dup)
+if (cnv.del.file!=0){
+cnv<-rbind(cnv,dup) } else {cnv<-dup}
 
+}
+
+
+if (length(cnv)>0){
 ### CHECK THAT THIS PERSON HAS ANY CNV CALLS
 if (indv.id %in% cnv$ID){
 CNVCALLS<-1  
@@ -116,6 +133,7 @@ cnv<-cnv[which(cnv$ID==indv.id),]
 Key <- paste(cnv$Chr,":",cnv$Start,"_",cnv$Ref,">",cnv$Alt, sep = "")
 cnv<-cbind(Key,cnv)
 cnv$FILTER<-"PASS"
+}
 }
 
 ########### END CNV PREP WORK 
@@ -249,10 +267,13 @@ exome <- tmp.exome[keep,]
 #gene.index = as.integer(factor(exome[,gene_col][indels],levels=lookup.lof[,1]))
 #exome[,score][indels] = lookup.lof[gene.index,2]
 
-
+if (is.na(indel.file)==FALSE){
 #### LIINA INDEL CADD SCORE FIX
 # 5b LN) UPDATE INDEL SCORING FOR INDELS. CADD scores manually retrieved for all INDELs via CADD website (v1.4).
-indel.scores = read.table(paste(dir,"GEMINI_190505_variants_FINAL_biallelicINDELs.hg19_cut_CADD_CHR.tsv",sep=""), sep='\t', quote='', header=T, comment.char='')
+indel.scores = read.table(indel.file, sep='\t', quote='', header=T, comment.char='')
+if (any(! names(indel.scores)[1:3]==c("X.Chrom","Pos","Ref"))){
+	print("Error with indel input file format\n Please see PSAP documentation for details\n")
+}
 
 # Revert CADDv1.4 annotations from 0-based to 1-based to match the PSAP output
 # Remove the first character in Ref and Alt to match the PSAP output. Add +1 nt to Pos of deletions, insertions unchanged
@@ -270,6 +291,8 @@ names(indels)[names(indels)=="RawScore"] <- "CADD13_RawScore"
 names(indels)[names(indels)=="PHRED"] <- score
 indels <- indels[names(exome)]
 exome <- rbind(exome[-grep("^frameshift",exome[,loc_col]),], indels)
+}
+
 
 # Normalize scores for grids later on
 MAX <- 62
