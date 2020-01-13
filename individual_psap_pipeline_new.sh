@@ -56,19 +56,29 @@ then
                 exit
         fi
 
+
+# PROJET MANAGEMENT
+	if [ ! -d avinput ]; then 
+        mkdir avinput
+	fi
+
+	if [ ! -d annotated ]; then 
+	mkdir annotated
+	fi
+
 # Extract and move to VCF file directory
-        FILE_LOC=${1%/*.vcf} # Extract location of VCF file
-        cd $FILE_LOC # Use location of  VCF file as working directory, this is where all output will be written
-        echo $PWD
+        FILE_LOC=${1%/*.vcf.gz} # Extract location of VCF file
+ #        cd $FILE_LOC # Use location of  VCF file as working directory, this is where all output will be written
+ #       echo $PWD
         VCF=${1##/*/} # Extract VCF file name
 	
 # Convert vcf file to annovar file
         echo "PROGRESS: Converting VCF file to annovar input"
-        cut -f1-8 $VCF > tmp #make small file just of sites, annotate this instead of full VCF
+       bcftools view $VCF |  cut -f1-8  > tmp #make small file just of sites, annotate this instead of full VCF
        perl ${ANNOVAR_PATH}convert2annovar.pl -format vcf4old tmp -outfile ${OUTFILE}.avinput -includeinfo
        rm tmp
 # Write column names from VCF file to header file (will be used later)
-        grep '#' $VCF | tail -n 1 > ${OUTFILE}.avinput.header # Extract all lines of the VCF header.  The last line of the VCF header contains coumn names - write columna names to .avinput.header file
+        bcftools view $VCF | grep '#' | tail -n 1 > ${OUTFILE}.avinput.header # Extract all lines of the VCF header.  The last line of the VCF header contains coumn names - write columna names to .avinput.header file
 
 # If there is no annotated directory create annotated directory
         if [ $(ls -d $PWD/*/ | grep -c -w "annotated") == 0 ]
@@ -79,7 +89,7 @@ then
 
 # Annotate with ANNOVAR
 	echo "PROGRESS: Annotating data with ANNOVAR"
-#	perl ${ANNOVAR_PATH}table_annovar.pl ${OUTFILE}.avinput -remove -outfile annotated/${OUTFILE}.avinput ${ANNOVAR_PATH}humandb/ -buildver $HG_BUILD -protocol wgEncodeGencodeBasicV${GENCODE_VER},gnomad_exome,exac03,esp6500siv2_all,1000g2015aug_all,cadd13,clinvar_20180603 -operation g,f,f,f,f,f,f -nastring NA -otherinfo -argument -separate,,,,,,
+	perl ${ANNOVAR_PATH}table_annovar.pl ${OUTFILE}.avinput -remove -outfile annotated/${OUTFILE}.avinput ${ANNOVAR_PATH}humandb/ -buildver $HG_BUILD -protocol wgEncodeGencodeBasicV${GENCODE_VER},gnomad_exome,exac03,esp6500siv2_all,1000g2015aug_all,cadd13,clinvar_20180603 -operation g,f,f,f,f,f,f -nastring NA -otherinfo -argument -separate,,,,,,
 
 
 # Split fusion genes and duplicate the variants (work for >=2 gene fused together)
@@ -92,6 +102,9 @@ then
 	IDS=($(awk '{print $2}' $PED_FILE))
 	IDX=1
 
+
+
+
 # RUN PSAP_individual.R for each individual
 	echo "PROGRESS: Starting PSAP annotation" 
 	
@@ -101,12 +114,13 @@ echo "#SBATCH --mem=12g " >>psap.sbatch
 echo "#SBATCH --array=1-$NSAMP" >> psap.sbatch
 echo "SAMPLE=\$( sed -n \${SLURM_ARRAY_TASK_ID}p $PED_FILE | cut -f2 -d\" \")" >> psap.sbatch
 echo "\${SAMPLE}" >> psap.sbatch
-echo "ml vcftools">> psap.sbatch
-echo "ml R" >> psap.sbatch
-echo "vcftools --indv \${SAMPLE} --vcf $VCF --recode --out \${SAMPLE} ">> psap.sbatch
-echo "perl ${ANNOVAR_PATH}convert2annovar.pl -format vcf4old \${SAMPLE}.recode.vcf -outfile \${SAMPLE}.avinput -includeinfo" >> psap.sbatch
+echo "if [ ! -f avinput/\${SAMPLE}.avinput ]" >> psap.sbatch
+echo "then" >> psap.sbatch
+echo "bcftools view $VCF -s \${SAMPLE} -c 1 | bcftools annotate -x ^INFO/AC >  \${SAMPLE}.tmp.vcf ">> psap.sbatch
+echo "perl ${ANNOVAR_PATH}convert2annovar.pl -format vcf4old \${SAMPLE}.tmp.vcf -outfile avinput/\${SAMPLE}.avinput -includeinfo" >> psap.sbatch
+echo "fi" >> psap.sbatch
 echo "Rscript ${PSAP_PATH}RScripts/PSAP_individual.R ${OUTFILE} \${SAMPLE} $PSAP_PATH $PED_FILE $HG_BUILD $FORCE $INDEL_FILE" >> psap.sbatch
-echo "rm \${SAMPLE}.avinput \${SAMPLE}.recode.vcf" >> psap.sbatch
+echo "rm \${SAMPLE}.avinput \${SAMPLE}.tmp.vcf" >> psap.sbatch
 
        
 sbatch psap.sbatch
