@@ -22,11 +22,11 @@ CNVCALLS<-0 ## VARIABLE WILL BE SET TO 1 IF CNV CALLS ARE AVAILABLE FOR THIS sAM
                                         #arg<-c("GTEx_test","GTEX-X4XY-0002-SM-58Q91","/scratch/dclab/wu_lin/psap_wulin/","/scratch/dclab/wu_lin/Controls/GTEx/GTEx_test.ped","hg19","-F")
 
 #setwd("/scratch/dclab/gemini/gemini_batch4/genotyping")
-#arg<-c("GEMINI4","washu_P22","/scratch/dclab/psap4/psap/","/scratch/dclab/liina/workfiles/GEMINI_190304_all_genotyped_samples_clean.ped","hg19","FALSE")
+#arg<-c("HORM","KB4","/Users/conradon/PSAP/PSAP/","HORM.ped","hg19",0)
 
 
 
-arg<-c("GEMINI4","H_VZ-P16-P16","/Users/conradon/psap/PSAP/","/Users/conradon/gemini/analysis/dec/GEMINI_190304_all_genotyped_samples_clean.ped","hg19","FALSE","/Users/conradon/gemini/analysis/dec/GEMINI_190505_variants_FINAL_biallelicINDELs.hg19_cut_CADD_CHR.tsv","/Users/conradon/gemini/analysis/dec/Gemini4-sq60-DEL-NOA-no-exclusions-no-outliers-maf-1pc-h19-liftover-final.hg19_multianno_dup.txt","/Users/conradon/gemini/analysis/dec/Gemini4-NOA-sq60-DUP-LoF-no-exclusions-no-outliers-maf-1pc-hg19-liftover.hg19_multianno_dup.txt")
+#arg<-c("GEMINI4","H_VZ-P16-P16","/Users/conradon/psap/PSAP/","/Users/conradon/gemini/analysis/dec/GEMINI_190304_all_genotyped_samples_clean.ped","hg19","FALSE","/Users/conradon/gemini/analysis/dec/GEMINI_190505_variants_FINAL_biallelicINDELs.hg19_cut_CADD_CHR.tsv","/Users/conradon/gemini/analysis/dec/Gemini4-sq60-DEL-NOA-no-exclusions-no-outliers-maf-1pc-h19-liftover-final.hg19_multianno_dup.txt","/Users/conradon/gemini/analysis/dec/Gemini4-NOA-sq60-DUP-LoF-no-exclusions-no-outliers-maf-1pc-hg19-liftover.hg19_multianno_dup.txt")
 
 
 
@@ -151,9 +151,12 @@ vcf.header <- read.table(paste(fam.id,".avinput.header",sep=""), sep="\t",string
 n.annos=ncol(header)
 #CHECK THAT SPECIFIED INDIVIDUAL IS IN THE DATA
 stopifnot(indv.id %in% vcf.header) 
-names(annotations)=c(header[-n.annos],vcf.header[1:8]) #take out the last column name of header (which is Otherinfo)	
+names(annotations)<-header
+#names(annotations)=c(header[-n.annos],vcf.header[1:8]) #take out the last column name of header (which is Otherinfo)	
+start.anno<-n.annos-7
+names(annotations[start.anno:n.annos])<-vcf.header[1:8]
 
-                                        #CLEAN UP OBJECT
+#CLEAN UP OBJECT
 annotations<-annotations[,-c(37,38,40:44)]
 
 # For count for variants, comparison, finding grids later on
