@@ -7,7 +7,7 @@ THE PSAP PACKAGE CONTAINS BASH SCRIPTS, AND ALL DEPENDANT PYTHON AND R SCRIPTS A
 1) ```individual_analysis_pipeline.sh```: Calls ANNOVAR to annotate data, calls a python script to appropriately annotate variants that overlap transcripts for multiple genes, calls an Rscript that performs some basic cleaning steps (mendelian inheritance filter - allows de novos, PSAP calibration filter, missing data filter, allele frequency discrepancy filter) and annotates all individuals with PSAP, and calls an R script that will report out candiate variants (inheritance pattern consistent with disease model)
 
 ## REQUIRED SOFTWARE
-This pipeline uses the R statistical software and ANNOVAR.  Please ensure R (http://r-project.org) and ANNOVAR (http://annovar.openbioinformatics.org) are installed.  Paths to all other accessory softwares/scripts are hard coded to the directories within the PSAP directory.
+This pipeline uses the R statistical software and ANNOVAR.  Please ensure R (http://r-project.org) and ANNOVAR (http://annovar.openbioinformatics.org) are installed.  Paths to all other accessory softwares/scripts are hard coded to the directories within the PSAP directory. Note that ANNOVAR output formats have changed over time, and thus it is recommended to use the verion of ANNOVAR used in current PSAP development (Version: Thu, 24 Oct 2019). 
 
 
 ### PEDIGREE FILE FORMAT (SPACE SEPARATED, NO HEADER):
@@ -32,7 +32,9 @@ it is best to use coding "1"; if your sample has substantial (> 50%) ancestry fr
 PSAP is intended to be used as a pipeline for generating single-sample reports from a batch VCF file, taking advantage of a 
 cluster environment for parallelization. The pipeline code on github consists of:
 1. an example shell script individual_psap_pipeline_new.sh, which could be modified as needed for local needs, or it could 
-simply serve as inspiration.  
+simply serve as inspiration. This script produces a batch file for each individual exome to analyzed; each batch file is 
+submitted using the slurm management system. If you don't have a cluster environment, or use a different one, this section
+will need to be modified. 
 
 2. R Scripts that, together, implement PSAP for individual samples (PSAP_individual.R and apply_PSAP.R). In theory these
 scripts, and the PSAP lookup tables are all that are needed to run PSAP, assuming that the input data are complete and
@@ -43,16 +45,20 @@ formatted properly).
 
 ##### USAGE: 
 
+Run "individual_psap_pipeline_new.sh -h" for an details of how to use the PSAP pipeline example script. Note this script
+is tailored to the slurm cluster environment; changes may be necessary. 
+
 The full PSAP pipeline provides a method by which to intergrate analysis of SNVs, indels, and CNVs in the same statistical 
 framework. In the current implmementation, we require SNVs and indels to be annotated with CADD1.3 phred scores. This means 
 that indels must be provided in a separate file from SNVs (in most cases this indel file will be obtained directly from the
-CADD web server: https://cadd.gs.washington.edu/score). 
+CADD web server: https://cadd.gs.washington.edu/score). The PSAP pipeline will work directly with the default, gzipped, file
+format produced by the web server; no reformatting is necessary. 
 
 Currently all of our analyses are based on CADD1.3, so it is important to use that version when annotating indels manual 
 with the CADD webserver. The file format for CADD1.4 is different (as of fall of 2019) and will cause the PSAP pipeline to
 break.
 
-
+CNVs: documentation on how to incorporate CNV calls will be added here.
 
 
 ## WHEN USING THIS SCRIPT PLEASE CITE
