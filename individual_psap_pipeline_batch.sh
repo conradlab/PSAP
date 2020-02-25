@@ -11,7 +11,6 @@ FORCE=0
 echo $#
 
 echo $PWD
-module load R
 if [ $# -gt 0 ] && [ $1 == "-h" ]
 then
 	echo "arg1 =  VCF file"

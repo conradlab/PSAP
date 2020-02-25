@@ -18,14 +18,6 @@ CNVCALLS<-0 ## VARIABLE WILL BE SET TO 1 IF CNV CALLS ARE AVAILABLE FOR THIS sAM
 
 
 #ARGUMENTS FOR TESTING VIA EMACS
-#setwd("/scratch/dclab/wu_lin/Controls/GTEx")
-                                        #arg<-c("GTEx_test","GTEX-X4XY-0002-SM-58Q91","/scratch/dclab/wu_lin/psap_wulin/","/scratch/dclab/wu_lin/Controls/GTEx/GTEx_test.ped","hg19","-F")
-
-#setwd("/scratch/dclab/gemini/gemini_batch4/genotyping")
-#arg<-c("HORM","KB4","/Users/conradon/PSAP/PSAP/","HORM.ped","hg19",0)
-
-
-
 #arg<-c("GEMINI4","H_VZ-P16-P16","/Users/conradon/psap/PSAP/","/Users/conradon/gemini/analysis/dec/GEMINI_190304_all_genotyped_samples_clean.ped","hg19","FALSE","/Users/conradon/gemini/analysis/dec/GEMINI_190505_variants_FINAL_biallelicINDELs.hg19_cut_CADD_CHR.tsv","/Users/conradon/gemini/analysis/dec/Gemini4-sq60-DEL-NOA-no-exclusions-no-outliers-maf-1pc-h19-liftover-final.hg19_multianno_dup.txt","/Users/conradon/gemini/analysis/dec/Gemini4-NOA-sq60-DUP-LoF-no-exclusions-no-outliers-maf-1pc-hg19-liftover.hg19_multianno_dup.txt")
 
 
@@ -35,7 +27,7 @@ indv.id <- arg[2] # Individual ID - ASSUMES only one individual is being analyze
 dir <- arg[3]
 ped <- read.table(arg[4],stringsAsFactors=F)
 build_ver <-arg[5]
-Force <- arg[6]
+Force <- "FALSE"
 indel.file <- arg[7]
 cnv.del.file <- arg[8]
 cnv.dup.file <- arg[9]
@@ -149,6 +141,7 @@ annotations <-read.table(paste("annotated/",fam.id,".avinput.",build_ver,"_multi
 header <-read.table(paste("annotated/",fam.id,".avinput.",build_ver,"_multianno_dup.txt",sep=""),sep="\t",stringsAsFactors=F,nrow=1,quote = "")
 vcf.header <- read.table(paste(fam.id,".avinput.header",sep=""), sep="\t",stringsAsFactors=F,comment.char="@")
 n.annos=ncol(header)
+
 #CHECK THAT SPECIFIED INDIVIDUAL IS IN THE DATA
 stopifnot(indv.id %in% vcf.header) 
 names(annotations)<-header
@@ -272,24 +265,24 @@ exome <- tmp.exome[keep,]
 
 if (is.na(indel.file)==FALSE){
 #### LIINA INDEL CADD SCORE FIX
-# 5b LN) UPDATE INDEL SCORING FOR INDELS. CADD scores manually retrieved for all INDELs via CADD website (v1.4).
-indel.scores = read.table(indel.file, sep='\t', quote='', header=T, comment.char='')
-if (any(! names(indel.scores)[1:3]==c("X.Chrom","Pos","Ref"))){
+# 5b LN) UPDATE INDEL SCORING FOR INDELS. CADD scores manually retrieved for all INDELs via CADD website (v1.3).
+indel.scores = read.table(indel.file, sep='\t', quote='', header=T, comment.char='',skip=1)
+if (any(! names(indel.scores)[1:3]==c("X.CHROM","POS","REF"))){
 	print("Error with indel input file format\n Please see PSAP documentation for details\n")
 }
 
 # Revert CADDv1.4 annotations from 0-based to 1-based to match the PSAP output
 # Remove the first character in Ref and Alt to match the PSAP output. Add +1 nt to Pos of deletions, insertions unchanged
-indel.scores$Ref <- as.character(indel.scores$Ref)
-indel.scores$Alt <- as.character(indel.scores$Alt)
-indel.scores$Pos <- as.integer(apply(indel.scores, 1, function(x) ifelse(nchar(x[3])>1,as.numeric(x[2])+1,x[2])))
-indel.scores$Ref <- apply(indel.scores, 1, function(x) ifelse(nchar(x[3])>1,substring(x[3],2),"-"))
-indel.scores$Alt <- apply(indel.scores, 1, function(x) ifelse(nchar(x[4])>1,substring(x[4],2),"-"))
-indel.scores <- unique(indel.scores[,c("X.Chrom","Pos","Ref","Alt","RawScore","PHRED")])
+#indel.scores$Ref <- as.character(indel.scores$Ref)
+#indel.scores$Alt <- as.character(indel.scores$Alt)
+#indel.scores$Pos <- as.integer(apply(indel.scores, 1, function(x) ifelse(nchar(x[3])>1,as.numeric(x[2])+1,x[2])))
+#indel.scores$Ref <- apply(indel.scores, 1, function(x) ifelse(nchar(x[3])>1,substring(x[3],2),"-"))
+#indel.scores$Alt <- apply(indel.scores, 1, function(x) ifelse(nchar(x[4])>1,substring(x[4],2),"-"))
+#indel.scores <- unique(indel.scores[,c("X.Chrom","Pos","Ref","Alt","RawScore","PHRED")])
 
 drops <- c("CADD13_RawScore","CADD13_PHRED")
 indels = exome[grep("^frameshift",exome[,loc_col]), !names(exome) %in% drops]
-indels = merge(indels, indel.scores, by.x=c("Chr","Start","Ref","Alt"), by.y=c("X.Chrom","Pos","Ref","Alt"), all.x=T, all.y=F)
+indels = merge(indels, indel.scores, by.x=c("Chr","Start","Ref","Alt"), by.y=c("X.CHROM","POS","REF","ALT"), all.x=T, all.y=F)
 names(indels)[names(indels)=="RawScore"] <- "CADD13_RawScore"
 names(indels)[names(indels)=="PHRED"] <- score
 indels <- indels[names(exome)]
