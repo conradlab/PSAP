@@ -45,8 +45,9 @@ formatted properly).
 
 ##### USAGE: 
 
-Run "individual_psap_pipeline_new.sh -h" for an details of how to use the PSAP pipeline example script. Note this script
-is tailored to the slurm cluster environment; changes may be necessary. 
+Run "individual_psap_pipeline.sh -h" for an details of how to use the PSAP pipeline example script for a single sample VCF
+
+"individual_psap_pipeline_batch.sh" is an example script is tailored to the slurm cluster environment; changes may be necessary. 
 
 The full PSAP pipeline provides a method by which to intergrate analysis of SNVs, indels, and CNVs in the same statistical 
 framework. In the current implmementation, we require SNVs and indels to be annotated with CADD1.3 phred scores. This means 
