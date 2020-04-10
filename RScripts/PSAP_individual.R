@@ -268,17 +268,37 @@ if (is.na(indel.file)==FALSE){
 # 5b LN) UPDATE INDEL SCORING FOR INDELS. CADD scores manually retrieved for all INDELs via CADD website (v1.3).
 indel.scores = read.table(indel.file, sep='\t', quote='', header=T, comment.char='',skip=1)
 if (any(! names(indel.scores)[1:3]==c("X.CHROM","POS","REF"))){
-	print("Error with indel input file format\n Please see PSAP documentation for details\n")
+
+print("Error with CADD indel input file format\n Please see PSAP documentation for details\n Expecting second line to
+	      contain #CHROM POS REF ALT RawScore PHRED\n")
+
 }
 
-# Revert CADDv1.4 annotations from 0-based to 1-based to match the PSAP output
+
+#Try to detect whether the contig naming system for INDELs is same as VCF. 
+ichr<-grep("chr",indel.scores$X.CHROM)
+vchr<-grep("chr",exome$Chr)
+
+#ADD "CHR" TO INDEL CONTIG NAMES SINCE THIS CONVENTION IS USED IN THE VCF
+if (length(vchr)>0 & length(ichr)==0){
+  indel.scores$X.CHROM<-paste("chr",indel.scores$X.CHROM,sep="")
+}
+
+
+# Try to detect whether INDEL allele encoding is same as VCF. annotations from 0-based to 1-based to match the PSAP output
+adash<-grep("-",indel.scores$ALT)
+rdash<-grep("-",indel.scores$REF)
+
+if (length(adash)==0 & length(rdash)==0){
+
 # Remove the first character in Ref and Alt to match the PSAP output. Add +1 nt to Pos of deletions, insertions unchanged
-#indel.scores$Ref <- as.character(indel.scores$Ref)
-#indel.scores$Alt <- as.character(indel.scores$Alt)
-#indel.scores$Pos <- as.integer(apply(indel.scores, 1, function(x) ifelse(nchar(x[3])>1,as.numeric(x[2])+1,x[2])))
-#indel.scores$Ref <- apply(indel.scores, 1, function(x) ifelse(nchar(x[3])>1,substring(x[3],2),"-"))
-#indel.scores$Alt <- apply(indel.scores, 1, function(x) ifelse(nchar(x[4])>1,substring(x[4],2),"-"))
-#indel.scores <- unique(indel.scores[,c("X.Chrom","Pos","Ref","Alt","RawScore","PHRED")])
+indel.scores$REF <- as.character(indel.scores$REF)
+indel.scores$ALT <- as.character(indel.scores$ALT)
+indel.scores$POS <- as.integer(apply(indel.scores, 1, function(x) ifelse(nchar(x[3])>1,as.numeric(x[2])+1,x[2])))
+indel.scores$REF <- apply(indel.scores, 1, function(x) ifelse(nchar(x[3])>1,substring(x[3],2),"-"))
+indel.scores$ALT <- apply(indel.scores, 1, function(x) ifelse(nchar(x[4])>1,substring(x[4],2),"-"))
+indel.scores <- unique(indel.scores[,c("X.CHROM","POS","REF","ALT","RawScore","PHRED")])
+}
 
 drops <- c("CADD13_RawScore","CADD13_PHRED")
 indels = exome[grep("^frameshift",exome[,loc_col]), !names(exome) %in% drops]
