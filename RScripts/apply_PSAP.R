@@ -10,7 +10,7 @@ if (nrow(exome.AD)>0) {
 	exome.AD$Dz.Model[which(exome.AD$Geno == "het_female")] <- "X-linked-het"
 	##ANNOTATE DATASETS WITH PSAP
 	# Read in lookup table
-	lookup <-read.table(paste(dir,"lookups/full.het.CADD13phred.gencodeV19.allsites",eth,"_031318_update3_rm4.txt.gz",sep=""),stringsAsFactors=FALSE,header=FALSE)
+	lookup <-read.table(paste(dir,"lookups_CADD16/full.het.CADD16phred.gencodeV35.allsites",eth,"_031318.txt.gz",sep=""),stringsAsFactors=FALSE,header=FALSE)
 	# GETS COLUMN (SCORE INTERVAL) INFO FOR LOOKUP TABLE
 	exome.AD$j<-findInterval(exome.AD[,"score_norm"],scale)+1
 	# find row
@@ -37,7 +37,7 @@ if (nrow(exome.AR)>0) {
 	exome.AR$Dz.Model[which(exome.AR$Geno == "hom_female")] <- "X-linked-hom"
 	##ANNOTATE DATASETS WITH PSAP
 	# Read in lookup table
-	lookup <-read.table(paste(dir,"lookups/full.hom.CADD13phred.gencodeV19.allsites",eth,"_031318_update3_rm4.txt.gz",sep=""),stringsAsFactors=FALSE,header=FALSE)
+	lookup <-read.table(paste(dir,"lookups_CADD16/full.hom.CADD16phred.gencodeV35.allsites",eth,"_031318.txt.gz",sep=""),stringsAsFactors=FALSE,header=FALSE)
 	# GETS COLUMN (SCORE INTERVAL) INFO FOR LOOKUP TABLE
 	exome.AR$j<-findInterval(exome.AR[,"score_norm"],scale)+1
 	# find row
@@ -70,7 +70,7 @@ if (nrow(exome.CHET) > 0) {
 	exome.CHET$Dz.Model[which(exome.CHET$Geno == "chet_female")] = "X-linked-chet"
 	##ANNOTATE DATASETS WITH PSAP
 	# Read in lookup table
-	lookup <-read.table(paste(dir,"lookups/full.chet.CADD13phred.gencodeV19.allsites",eth,"_031318_update3_rm4.txt.gz",sep=""),stringsAsFactors=FALSE,header=FALSE)
+	lookup <-read.table(paste(dir,"lookups_CADD16/full.chet.CADD16phred.gencodeV35.allsites",eth,"_031318.txt.gz",sep=""),stringsAsFactors=FALSE,header=FALSE)
 	# GETS COLUMN (SCORE INTERVAL) INFO FOR LOOKUP TABLE
 	exome.CHET$j<-findInterval(exome.CHET[,"score_norm"],scale)+1
 	# find row
@@ -108,7 +108,7 @@ if (gender == "male"){
 
 		##ANNOTATE DATASETS WITH PSAP
 		# Read in lookup table
-		lookup <-read.table(paste(dir,"lookups/full.hem.CADD13phred.gencodeV19.allsites",eth,"_031318_update3_rm4.txt.gz",sep=""),stringsAsFactors=FALSE,header=FALSE)
+		lookup <-read.table(paste(dir,"lookups_CADD16/full.hem.CADD16phred.gencodeV35.allsites",eth,"_031318.txt.gz",sep=""),stringsAsFactors=FALSE,header=FALSE)
 		# GETS COLUMN (SCORE INTERVAL) INFO FOR LOOKUP TABLE
 		exome.HEM$j<-findInterval(exome.HEM[,"score_norm"],scale)+1
 		# find row
