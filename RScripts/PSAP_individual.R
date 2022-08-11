@@ -54,8 +54,8 @@ aa_col <- paste("AAChange.",gencode_ver,sep="")
 score <- "CADD16phred"
 scale <- seq(0,1,7.14285e-4)
 # read in lookup gene list and XY gene list
-lookup.genes <- scan(paste(dir,"lookups_CADD16/lookup_genes_112621.txt",sep=""),what = "character") #Need to make this (this is the whole gene list with XY genes)
-XY_genelist <- scan(paste(dir,"lookups_CADD16/Gender_genelist_112621.txt",sep=""),what = "character") #Need to put this
+lookup.genes <- scan(paste(dir,"lookups_CADD16/lookup_genes_030122.txt",sep=""),what = "character") #Need to make this (this is the whole gene list with XY genes)
+XY_genelist <- scan(paste(dir,"lookups_CADD16/Gender_genelist_030122.txt",sep=""),what = "character") #Need to put this
 
 
 
@@ -318,7 +318,7 @@ exome[,score][which(exome[,score] < MIN)] <- MIN
 exome$score_norm <- (exome[,score]-MIN)/(MAX-MIN)
 
 # 6) REMOVE VARIANTS THAT DO NOT PASS QUALITY FILTER OR HAVE MISSING pCADD SCORES
-info <- exome[which(exome$FILTER=="PASS" & is.na(exome[,score]) == F | exome$FILTER=="." & is.na(exome[,score]) == F),
+info <- exome[which(is.na(exome[,score]) == F),
 c("ID","Key","Chr","Start","Ref","Alt","Total_Read","Alt_Read",paste(c("Gene.","Func.","ExonicFunc.","AAChange.","GeneDetail."),gencode_ver,sep=""),"AF","AF_afr","AF_nfe","score_norm",score,"CLNSIG","CLNDN",indv.id)]
 
 

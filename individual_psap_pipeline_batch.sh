@@ -67,19 +67,19 @@ then
 
 # Extract and move to VCF file directory
         FILE_LOC=${1%/*.vcf.gz} # Extract location of VCF file
- #        cd $FILE_LOC # Use location of  VCF file as working directory, this is where all output will be written
- #       echo $PWD
- #       VCF=${1##/*/} # Extract VCF file name
-	 VCF=${1}
+        cd $FILE_LOC # Use location of  VCF file as working directory, this is where all output will be written
+        echo $PWD
+        VCF=${1##/*/} # Extract VCF file name
+	VCF=${1}
 
 	
 # Convert vcf file to annovar file
         echo "PROGRESS: Converting VCF file to annovar input"
-   #    $bcftools view $VCF |  cut -f1-8  > tmp #make small file just of sites, annotate this instead of full VCF
-  #     perl ${ANNOVAR_PATH}convert2annovar.pl -format vcf4old tmp -outfile ${OUTFILE}.avinput -includeinfo
-    #   rm tmp
+        $bcftools view $VCF |  cut -f1-8  > tmp #make small file just of sites, annotate this instead of full VCF
+        perl ${ANNOVAR_PATH}convert2annovar.pl -format vcf4old tmp -outfile ${OUTFILE}.avinput -includeinfo
+        rm tmp
 # Write column names from VCF file to header file (will be used later)
- #       $bcftools view $VCF | grep '#' | tail -n 1 > ${OUTFILE}.avinput.header # Extract all lines of the VCF header.  The last line of the VCF header contains coumn names - write columna names to .avinput.header file
+        $bcftools view $VCF | grep '#' | tail -n 1 > ${OUTFILE}.avinput.header # Extract all lines of the VCF header.  The last line of the VCF header contains coumn names - write columna names to .avinput.header file
 
 # If there is no annotated directory create annotated directory
         if [ $(ls -d $PWD/*/ | grep -c -w "annotated") == 0 ]
@@ -90,16 +90,17 @@ then
 
 # Annotate with ANNOVAR
 	echo "PROGRESS: Annotating data with ANNOVAR"
-#	perl ${ANNOVAR_PATH}table_annovar.pl ${OUTFILE}.avinput -remove -outfile annotated/${OUTFILE}.avinput ${ANNOVAR_PATH}humandb/ -buildver $HG_BUILD -protocol wgEncodeGencodeBasicV${GENCODE_VER},gnomad211_exome,clinvar_20210501 -operation g,f,f -nastring NA -otherinfo -argument -separate,,
+	perl ${ANNOVAR_PATH}table_annovar.pl ${OUTFILE}.avinput -remove -outfile annotated/${OUTFILE}.avinput ${ANNOVAR_PATH}humandb/ -buildver $HG_BUILD -protocol wgEncodeGencodeBasicV${GENCODE_VER},gnomad211_exome,clinvar_20210501 -operation g,f,f -nastring NA -otherinfo -argument -separate,,
 
 # Annotate with CADD
         echo "PROGRESS: Annotate CADD scores"
+	# insert your conda env here with necessary packages
         conda activate daniel_CADD
- #       python3 /home/groups/ConradLab/daniel/gemini_phase_2_analysis/annotate_CADD/extract_scores.py -p /home/groups/ConradLab/daniel/gemini_phase_2_analysis/CADD1.6/CADD1.6_hg38_whole_genome_SNVs.tsv.gz -i annotated/${OUTFILE}.avinput.${HG_BUILD}_multianno.txt --found_out annotated/${OUTFILE}.avinput.${HG_BUILD}_multianno_CADD.txt
+        python3 /home/groups/ConradLab/daniel/gemini_phase_2_analysis/annotate_CADD/extract_scores.py -p /home/groups/ConradLab/daniel/gemini_phase_2_analysis/CADD1.6/CADD1.6_hg38_whole_genome_SNVs.tsv.gz -i annotated/${OUTFILE}.avinput.${HG_BUILD}_multianno.txt --found_out annotated/${OUTFILE}.avinput.${HG_BUILD}_multianno_CADD.txt
 
 # Split fusion genes and duplicate the variants (work for >=2 gene fused together)
         echo "PROGRESS: Split fusion genes and duplicate the variants"
-#        python3 ${PSAP_PATH}pythonscript/fusion_gene_split.py annotated/${OUTFILE}.avinput.${HG_BUILD}_multianno_CADD.txt
+        python3 ${PSAP_PATH}pythonscript/fusion_gene_split.py annotated/${OUTFILE}.avinput.${HG_BUILD}_multianno_CADD.txt
 
 
 # EXTRACT INDIVIDUAL IDS
@@ -114,7 +115,7 @@ then
 	echo "PROGRESS: Starting PSAP annotation" 
 NSAMP=${#IDS[@] + 1}
 echo "#!/bin/bash " >psap1.sbatch
-echo "#SBATCH --mem=12g " >>psap1.sbatch
+echo "#SBATCH --mem=100g " >>psap1.sbatch
 echo "#SBATCH --array=2-1000%500" >> psap1.sbatch
 echo "SAMPLE=\$( sed -n \${SLURM_ARRAY_TASK_ID}p $PED_FILE | cut -f2 )" >> psap1.sbatch
 echo "\${SAMPLE}" >> psap1.sbatch
@@ -127,7 +128,7 @@ echo "Rscript ${PSAP_PATH}RScripts/PSAP_individual.R ${OUTFILE} \${SAMPLE} $PSAP
 echo "rm \${SAMPLE}.avinput \${SAMPLE}.tmp.vcf" >> psap1.sbatch
 
 echo "#!/bin/bash " >psap2.sbatch
-echo "#SBATCH --mem=12g " >>psap2.sbatch
+echo "#SBATCH --mem=100g " >>psap2.sbatch
 echo "#SBATCH --array=1001-2000%500" >> psap2.sbatch
 echo "SAMPLE=\$( sed -n \${SLURM_ARRAY_TASK_ID}p $PED_FILE | cut -f2 )" >> psap2.sbatch
 echo "\${SAMPLE}" >> psap2.sbatch
@@ -140,7 +141,7 @@ echo "Rscript ${PSAP_PATH}RScripts/PSAP_individual.R ${OUTFILE} \${SAMPLE} $PSAP
 echo "rm \${SAMPLE}.avinput \${SAMPLE}.tmp.vcf" >> psap2.sbatch
 
 echo "#!/bin/bash " >psap3.sbatch
-echo "#SBATCH --mem=12g " >>psap3.sbatch
+echo "#SBATCH --mem=100g " >>psap3.sbatch
 echo "#SBATCH --array=2001-$NSAMP%500" >> psap3.sbatch
 echo "SAMPLE=\$( sed -n \${SLURM_ARRAY_TASK_ID}p $PED_FILE | cut -f2 )" >> psap3.sbatch
 echo "\${SAMPLE}" >> psap3.sbatch
@@ -157,7 +158,7 @@ echo "rm \${SAMPLE}.avinput \${SAMPLE}.tmp.vcf" >> psap3.sbatch
 echo "submitted first batch"
 #sbatch psap2.sbatch
 echo "done with second batch"
-sbatch psap3.sbatch
+#sbatch psap3.sbatch
 echo "done with third batch"
 
 # Generate report file - will look for variants present in two or more affected with PSAP < 1e-3 and not observed in unaffected
