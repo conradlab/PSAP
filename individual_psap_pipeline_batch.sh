@@ -67,8 +67,8 @@ then
 
 # Extract and move to VCF file directory
         FILE_LOC=${1%/*.vcf.gz} # Extract location of VCF file
-        cd $FILE_LOC # Use location of  VCF file as working directory, this is where all output will be written
-        echo $PWD
+#        cd $FILE_LOC # Use location of  VCF file as working directory, this is where all output will be written
+#        echo $PWD
         VCF=${1##/*/} # Extract VCF file name
 	VCF=${1}
 
