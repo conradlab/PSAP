@@ -25,24 +25,25 @@ CNVCALLS<-0 ## VARIABLE WILL BE SET TO 1 IF CNV CALLS ARE AVAILABLE FOR THIS sAM
 fam.id <- strsplit(arg[1],".avinput",fixed=T)
 indv.id <- arg[2] # Individual ID - ASSUMES only one individual is being analyzed/annotated
 dir <- arg[3]
-ped <- read.table(arg[4],stringsAsFactors=F)
+ped <- read.table(arg[4],stringsAsFactors=F, sep='\t')
 build_ver <-arg[5]
 Force <- "FALSE"
 indel.file <- arg[7]
 cnv.del.file <- arg[8]
 cnv.dup.file <- arg[9]
-
 #find ethnicity information
-if(ped$V7[which(ped$V2 == indv.id)] == 2) {
+if(ped$V13[which(ped$V2 == indv.id)] == "AFR") {
+	print("using AFR tables")
 	eth <- "_AFR"
-} else if (ped$V7[which(ped$V2 == indv.id)] == 3) {
+} else if (ped$V13[which(ped$V2 == indv.id)] == "EUR") {
+	print("using NFE tables")
 	eth <- "_NFE"
 } else {
 	eth <- ""
 }
 ## gene version and correspondingn columns
 if(build_ver == "hg38"){
-    gencode_ver = "wgEncodeGencodeBasicV20"
+    gencode_ver = "wgEncodeGencodeBasicV35"
 }else{
     gencode_ver = "wgEncodeGencodeBasicV19"
 }
@@ -50,11 +51,11 @@ gene_col <- paste("Gene.",gencode_ver,sep="")
 func_col <- paste("Func.",gencode_ver,sep="")
 loc_col <- paste("ExonicFunc.",gencode_ver,sep="")
 aa_col <- paste("AAChange.",gencode_ver,sep="")
-score <- "CADD13_PHRED"
+score <- "CADD16phred"
 scale <- seq(0,1,7.14285e-4)
 # read in lookup gene list and XY gene list
-lookup.genes <- scan(paste(dir,"lookups/lookup_genes_041219_rm4.txt",sep=""),what = "character") #Need to make this (this is the whole gene list with XY genes)
-XY_genelist <- scan(paste(dir,"lookups/Gender_genelist_041219_rm4.txt",sep=""),what = "character") #Need to put this
+lookup.genes <- scan(paste(dir,"lookups_CADD16/lookup_genes_030122.txt",sep=""),what = "character") #Need to make this (this is the whole gene list with XY genes)
+XY_genelist <- scan(paste(dir,"lookups_CADD16/Gender_genelist_030122.txt",sep=""),what = "character") #Need to put this
 
 
 
@@ -136,9 +137,9 @@ print("read in exomes")
 
 
 #READ IN ANNOTATIONS
-annotations <-read.table(paste("annotated/",fam.id,".avinput.",build_ver,"_multianno_dup.txt",sep=""),sep="\t",stringsAsFactors=F,skip=1,quote = "")
+annotations <-read.table(paste("annotated/",fam.id,".avinput.",build_ver,"_multianno_CADD_dup.txt",sep=""),sep="\t",stringsAsFactors=F,skip=1,quote = "")
 
-header <-read.table(paste("annotated/",fam.id,".avinput.",build_ver,"_multianno_dup.txt",sep=""),sep="\t",stringsAsFactors=F,nrow=1,quote = "")
+header <-read.table(paste("annotated/",fam.id,".avinput.",build_ver,"_multianno_CADD_dup.txt",sep=""),sep="\t",stringsAsFactors=F,nrow=1,quote = "")
 vcf.header <- read.table(paste(fam.id,".avinput.header",sep=""), sep="\t",stringsAsFactors=F,comment.char="@")
 n.annos=ncol(header)
 
@@ -149,8 +150,10 @@ names(annotations)<-header
 start.anno<-n.annos-7
 names(annotations[start.anno:n.annos])<-vcf.header[1:8]
 
+#print(head(annotations))
 #CLEAN UP OBJECT
-annotations<-annotations[,-c(37,38,40:44)]
+#annotations<-annotations[,-c(37,38,40:44)]
+annotations<-annotations[,-c(40)]
 
 # For count for variants, comparison, finding grids later on
 annotations$Key <- paste(annotations$Chr,":",annotations$Start,"_",annotations$Ref,">",annotations$Alt, sep = "")
@@ -208,7 +211,6 @@ if(length(which(a1 == 0 & a2 == 0)) > 0){
 }
 
 
-
 if(ped$V5[which(ped$V2 == indv.id)] == 1){ #male
 	gender = "male"
 	exome.raw[which(exome.raw[,indv.id] %in% c("hom") & exome.raw[,gene_col] %in% XY_genelist),indv.id] = "hem" #hem in non-PAR region and Y
@@ -220,7 +222,6 @@ if(ped$V5[which(ped$V2 == indv.id)] == 1){ #male
 	exome.raw[which(exome.raw[,indv.id]=="hom" & exome.raw[,gene_col] %in% XY_genelist),indv.id] = "hom_female" #hom in non-PAR region	
 
       }
-
 ######### MERGE CNV AND EXOME BEFORE CLEANING
 if (CNVCALLS){
 cnv<-cnv[,which(colnames(cnv) %in% colnames(exome.raw))]
@@ -233,13 +234,14 @@ exome.raw<-rbind(exome.raw,cnv)
 print("clean data process")
 # Make score and gnomAD frequency information as numeric class
 class(exome.raw[,score]) = "numeric"
-class(exome.raw$gnomAD_exome_ALL) = "numeric"
+class(exome.raw$AF) = "numeric"
 # 1) REMOVE BLACKLISTED GENES; how about gnomAD low coverage list?
 # bl <- scan(paste(dir,"psap/lookups/blacklist_081818.txt",sep=""),what="character") #Need to check file name
 # bl.remove <- unique(c(which(exome.raw[,gene_col] %in% bl),grep("^HLA", exome.raw[,gene_col]), grep("^MUC", exome.raw[,gene_col]), grep("^KRT", exome.raw[,gene_col]), grep("^TRBV", exome.raw[,gene_col])))
 bl.remove <- unique(c(grep("^HLA", exome.raw[,gene_col]), grep("^MUC", exome.raw[,gene_col]), grep("^KRT", exome.raw[,gene_col]), grep("^TRBV", exome.raw[,gene_col])))
 # 2) REMOVE AF DISCREPANCIES (ANYTHING THAT IS MISSING IN ExAC BUT PRESENT IN 1000GP OR ESP AT GREATER THAN 5% FREQUENCY
-af.remove <- which(is.na(exome.raw$gnomAD_exome_ALL) == T & exome.raw[,"1000g2015aug_all"] > 0.05 | is.na(exome.raw$gnomAD_exome_ALL) == T & exome.raw$esp6500siv2_all > 0.05)
+af.remove <- c()
+#af.remove <- which(is.na(exome.raw$AF) == T & exome.raw[,"1000g2015aug_all"] > 0.05 | is.na(exome.raw$gnomAD_exome_ALL) == T & exome.raw$esp6500siv2_all > 0.05)
 # 3) REMOVE GENES NOT IN LOOKUP TABLES
 lookup.remove <- which(! exome.raw[,gene_col] %in% lookup.genes)
 # 4) REMOVE LINES WHERE ALL AFs ARE MISSING
@@ -248,7 +250,6 @@ af<-af[which(af %in% names(exome.raw))]
 missing.remove<-NULL
 if (length(af)>0){
   missing.remove <- which(apply(exome.raw[af],1,function(row) return(sum(is.na(row)))) == length(af))}
-
 
 # Remove these variants
 tmp.exome <- exome.raw[-unique(c(bl.remove,af.remove,lookup.remove,missing.remove)),]
@@ -267,7 +268,7 @@ if (is.na(indel.file)==FALSE){
 #### LIINA INDEL CADD SCORE FIX
 # 5b LN) UPDATE INDEL SCORING FOR INDELS. CADD scores manually retrieved for all INDELs via CADD website (v1.3).
 indel.scores = read.table(indel.file, sep='\t', quote='', header=T, comment.char='',skip=1)
-if (any(! names(indel.scores)[1:3]==c("X.CHROM","POS","REF"))){
+if (any(! names(indel.scores)[1:3]==c("X.Chrom","Pos","Ref"))){
 
 print("Error with CADD indel input file format\n Please see PSAP documentation for details\n Expecting second line to
 	      contain #CHROM POS REF ALT RawScore PHRED\n")
@@ -276,14 +277,13 @@ print("Error with CADD indel input file format\n Please see PSAP documentation f
 
 
 #Try to detect whether the contig naming system for INDELs is same as VCF. 
-ichr<-grep("chr",indel.scores$X.CHROM)
+ichr<-grep("chr",indel.scores$X.Chrom)
 vchr<-grep("chr",exome$Chr)
 
 #ADD "CHR" TO INDEL CONTIG NAMES SINCE THIS CONVENTION IS USED IN THE VCF
 if (length(vchr)>0 & length(ichr)==0){
-  indel.scores$X.CHROM<-paste("chr",indel.scores$X.CHROM,sep="")
+  indel.scores$X.Chrom<-paste("chr",indel.scores$X.Chrom,sep="")
 }
-
 
 # Try to detect whether INDEL allele encoding is same as VCF. annotations from 0-based to 1-based to match the PSAP output
 adash<-grep("-",indel.scores$ALT)
@@ -292,21 +292,21 @@ rdash<-grep("-",indel.scores$REF)
 if (length(adash)==0 & length(rdash)==0){
 
 # Remove the first character in Ref and Alt to match the PSAP output. Add +1 nt to Pos of deletions, insertions unchanged
-indel.scores$REF <- as.character(indel.scores$REF)
-indel.scores$ALT <- as.character(indel.scores$ALT)
-indel.scores$POS <- as.integer(apply(indel.scores, 1, function(x) ifelse(nchar(x[3])>1,as.numeric(x[2])+1,x[2])))
-indel.scores$REF <- apply(indel.scores, 1, function(x) ifelse(nchar(x[3])>1,substring(x[3],2),"-"))
-indel.scores$ALT <- apply(indel.scores, 1, function(x) ifelse(nchar(x[4])>1,substring(x[4],2),"-"))
-indel.scores <- unique(indel.scores[,c("X.CHROM","POS","REF","ALT","RawScore","PHRED")])
+indel.scores$Ref <- as.character(indel.scores$Ref)
+indel.scores$Alt <- as.character(indel.scores$Alt)
+indel.scores$Pos <- as.integer(apply(indel.scores, 1, function(x) ifelse(nchar(x[3])>1,as.numeric(x[2])+1,x[2])))
+indel.scores$Ref <- apply(indel.scores, 1, function(x) ifelse(nchar(x[3])>1,substring(x[3],2),"-"))
+indel.scores$Alt <- apply(indel.scores, 1, function(x) ifelse(nchar(x[4])>1,substring(x[4],2),"-"))
+indel.scores <- unique(indel.scores[,c("X.Chrom","Pos","Ref","Alt","RawScore","PHRED")])
 }
-
-drops <- c("CADD13_RawScore","CADD13_PHRED")
+drops <- c("CADD16raw","CADD16phred")
 indels = exome[grep("^frameshift",exome[,loc_col]), !names(exome) %in% drops]
-indels = merge(indels, indel.scores, by.x=c("Chr","Start","Ref","Alt"), by.y=c("X.CHROM","POS","REF","ALT"), all.x=T, all.y=F)
-names(indels)[names(indels)=="RawScore"] <- "CADD13_RawScore"
+indels = merge(indels, indel.scores, by.x=c("Chr","Start","Ref","Alt"), by.y=c("X.Chrom","Pos","Ref","Alt"), all.x=T, all.y=F)
+names(indels)[names(indels)=="RawScore"] <- "CADD16raw"
 names(indels)[names(indels)=="PHRED"] <- score
 indels <- indels[names(exome)]
 exome <- rbind(exome[-grep("^frameshift",exome[,loc_col]),], indels)
+
 }
 
 
@@ -317,17 +317,16 @@ exome[,score][which(exome[,score] > MAX)] <- MAX
 exome[,score][which(exome[,score] < MIN)] <- MIN
 exome$score_norm <- (exome[,score]-MIN)/(MAX-MIN)
 
-
 # 6) REMOVE VARIANTS THAT DO NOT PASS QUALITY FILTER OR HAVE MISSING pCADD SCORES
-info <- exome[which(exome$FILTER=="PASS" & is.na(exome[,score]) == F | exome$FILTER=="." & is.na(exome[,score]) == F),
-c("ID","Key","Chr","Start","Ref","Alt","Total_Read","Alt_Read",paste(c("Gene.","Func.","ExonicFunc.","AAChange.","GeneDetail."),gencode_ver,sep=""),"gnomAD_exome_ALL","gnomAD_exome_AFR","gnomAD_exome_NFE","ExAC_ALL","1000g2015aug_all","esp6500siv2_all","score_norm",score,"CLNSIG","CLNDN",indv.id)]
+info <- exome[which(is.na(exome[,score]) == F),
+c("ID","Key","Chr","Start","Ref","Alt","Total_Read","Alt_Read",paste(c("Gene.","Func.","ExonicFunc.","AAChange.","GeneDetail."),gencode_ver,sep=""),"AF","AF_afr","AF_nfe","score_norm",score,"CLNSIG","CLNDN",indv.id)]
 
 
 
 #TRACK THE DATA/DATA NOT INCLUDED IN ANY OF THE ABOVE ANALYSES AND OUTPUT IN THE END
 id.raw <- exome.raw$Key
 id.final <- info$Key
-not_include <- unique(exome.raw[which(! id.raw %in% id.final),c("ID","Key","Chr","Start","Ref","Alt","Total_Read","Alt_Read",paste(c("Gene.","Func.","ExonicFunc.","AAChange.","GeneDetail."),gencode_ver,sep=""),"gnomAD_exome_ALL","gnomAD_exome_AFR","gnomAD_exome_NFE","ExAC_ALL","1000g2015aug_all","esp6500siv2_all",score,"CLNSIG","CLNDN",indv.id)])
+not_include <- unique(exome.raw[which(! id.raw %in% id.final),c("ID","Key","Chr","Start","Ref","Alt","Total_Read","Alt_Read",paste(c("Gene.","Func.","ExonicFunc.","AAChange.","GeneDetail."),gencode_ver,sep=""),"AF","AF_afr","AF_nfe",score,"CLNSIG","CLNDN",indv.id)])
 
 # Remove information that will not be further used
 rm(list=c("keep","exome","tmp.exome","exome.raw","af.remove","lookup.remove","bl.remove","lookup.genes"))

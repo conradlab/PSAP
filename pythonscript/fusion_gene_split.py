@@ -26,6 +26,7 @@ data_file = open(input,"r")
 # read the header line and find the column index for Gene, this information is used later for duplicate variant and slipt gene
 header = data_file.readline().rstrip("\n").split("\t") #read the current line, strip the end "\n", and split by "\t"
 Gene_ind = [i for i, j in enumerate(header) if "Gene.wgEncodeGencodeBasic" in j][0] #find the index of column for Gene annotation
+Func_ind = [i for i, j in enumerate(header) if "Func.wgEncodeGencodeBasic" in j][0]
 ## Open output file
 out_file = open(file_name + "_dup.txt","w")
 # write out the same header as the input file
@@ -36,11 +37,16 @@ for lines in data_file:
 	line = lines.rstrip("\n").split("\t")
 	# extracts gene info
 	Gene = line[Gene_ind]
+	Func = line[Func_ind]
+
 	# two situations: fusion gene or not
 	if ";" not in Gene:	#not fusion gene
 		out_file.write(lines)
 	else: #fusion gene
 		Genes = Gene.split(";") # a list of all the genes in the fusion gene, sometimes > 2 genes
+		Funcs = Func.split(";")
+		#if len(Genes) != len(Funcs): 
+		#	print('ahhhh')
 		for i in range(len(Genes)):
 			line_new = line
 			line_new[Gene_ind] = Gene.split(";")[i]
